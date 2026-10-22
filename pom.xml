@@ -59,6 +59,12 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- H2 web console auto-configuration (enabled only in the dev profile) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-h2console</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- JWT for Mobile Token Authentication -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

@@ -7,8 +7,10 @@ import br.com.rodrigues.housesit.domain.repository.UserRepository;
 import br.com.rodrigues.housesit.dto.*;
 import br.com.rodrigues.housesit.security.GoogleTokenVerifierService;
 import br.com.rodrigues.housesit.security.JwtService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
@@ -31,7 +33,7 @@ public class AuthService {
     @Transactional
     public AuthResponse authenticateWithGoogle(GoogleAuthRequest request) {
         GoogleTokenVerifierService.GoogleUserInfo googleUserInfo = googleTokenVerifierService.verifyToken(request.idToken())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Google ID Token"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Google ID Token"));
 
         User user = userRepository.findByGoogleSub(googleUserInfo.sub())
                 .or(() -> userRepository.findByEmail(googleUserInfo.email()))

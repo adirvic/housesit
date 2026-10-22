@@ -43,25 +43,42 @@ A modern private financial platform designed specifically for couples to track, 
 - **Backend**: Spring Boot 4 / Java 17+, Spring Security 6 (JWT + Google OAuth2), Spring Data JPA, Hibernate, H2 Database (or PostgreSQL).
 - **Frontend (Web)**: Responsive Mobile-First HTML5 / Tailwind CSS / Vanilla JS.
 - **Frontend (Mobile)**: React Native / Expo with Google Sign-In support.
-- **Database**: H2 In-Memory (dev) with web console enabled at `/h2-console`.
+- **Database**: H2 In-Memory, with the web console at `/h2-console` in the `dev` profile only.
 
 ---
 
 ## 🚀 Running the Project
 
 ### 1. Start the Backend Server
+Run locally with the `dev` profile, which turns on the development conveniences (demo data, dev login, mock Google tokens, H2 console) and uses a throwaway JWT key:
 ```bash
-./mvnw spring-boot:run
-# Or on Windows:
-.\mvnw.cmd spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
+# Or on Windows (PowerShell):
+$env:SPRING_PROFILES_ACTIVE="dev"; .\mvnw.cmd spring-boot:run
 ```
 
 Once running:
 - **Mobile Web App UI**: Open [http://localhost:8080/](http://localhost:8080/) in any mobile browser or desktop.
-- **H2 Database Console**: Open [http://localhost:8080/h2-console](http://localhost:8080/h2-console) (JDBC URL: `jdbc:h2:mem:housesitdb`, user: `sa`, password: empty).
+- **H2 Database Console** (dev only, localhost only): Open [http://localhost:8080/h2-console](http://localhost:8080/h2-console) (JDBC URL: `jdbc:h2:mem:housesitdb`, user: `sa`, password: empty).
+
+### Configuration & Security
+The default configuration is secure by default: outside the `dev` profile the app refuses to start without a real JWT key, and every development shortcut is off.
+
+| Environment variable | Required | Description |
+|---|---|---|
+| `JWT_SECRET` | Yes (outside `dev`) | HMAC key for signing JWTs, at least 32 bytes. Generate with `openssl rand -base64 48`. |
+| `GOOGLE_CLIENT_ID` | For Google Sign-In | OAuth client ID. Google ID tokens issued for any other audience are rejected. |
+| `CORS_ALLOWED_ORIGINS` | No | Comma-separated origins allowed to call the API from a browser (e.g. `https://app.example.com`). Empty means same-origin only. Credentials are never allowed, since the API uses Bearer tokens. |
+| `JWT_EXPIRATION_MS` | No | Token lifetime, default 24h. |
+
+What only exists in the `dev` profile:
+- `POST /api/auth/dev-login` (passwordless login as any email); outside `dev` the endpoint is not mapped and returns 404.
+- `mock-google:<email>:<name>` tokens on `/api/auth/google`.
+- The H2 web console, restricted to localhost.
+- The pre-seeded demo couple and expenses.
 
 ### 2. Pre-Seeded Demo Data
-The application starts with a pre-configured couple:
+In the `dev` profile, the application starts with a pre-configured couple:
 - **Husband**: `Junior` (`junior@example.com`)
 - **Wife**: `Ana` (`ana@example.com`)
 - **Household**: `Our Cozy Home` (Invite Code: `LOVE2026`)
@@ -75,7 +92,7 @@ The application starts with a pre-configured couple:
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/auth/google` | Exchange Google ID Token (`{ "idToken": "..." }`) for JWT |
-| `POST` | `/api/auth/dev-login` | Instant dev login (`{ "email": "junior@example.com", "name": "Junior" }`) |
+| `POST` | `/api/auth/dev-login` | Instant dev login, `dev` profile only (`{ "email": "junior@example.com", "name": "Junior" }`) |
 | `GET` | `/api/auth/me` | Fetch current user and household details |
 
 ### 🏠 Household (`/api/household`)
@@ -109,8 +126,8 @@ The application starts with a pre-configured couple:
 
 1. Go to [Google Cloud Console Credentials](https://console.cloud.google.com/apis/credentials).
 2. Create an **OAuth 2.0 Client ID** (Web application).
-3. Set your client ID in `application.properties` or environment variable:
-   ```properties
-   app.google.client-id=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+3. Set your client ID through the `GOOGLE_CLIENT_ID` environment variable:
+   ```bash
+   export GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
    ```
 4. On your mobile app (React Native / Flutter / Android / iOS), sign in the user via Google Sign-in SDK, take the `idToken` from the result, and POST it to `/api/auth/google`.
