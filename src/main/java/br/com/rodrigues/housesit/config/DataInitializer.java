@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Component
+@Profile("dev")
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;

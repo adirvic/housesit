@@ -2,7 +2,6 @@ package br.com.rodrigues.housesit.controller;
 
 import br.com.rodrigues.housesit.domain.model.User;
 import br.com.rodrigues.housesit.dto.AuthResponse;
-import br.com.rodrigues.housesit.dto.DevLoginRequest;
 import br.com.rodrigues.housesit.dto.GoogleAuthRequest;
 import br.com.rodrigues.housesit.dto.HouseholdDto;
 import br.com.rodrigues.housesit.dto.UserDto;
@@ -31,12 +30,6 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody GoogleAuthRequest request) {
         AuthResponse response = authService.authenticateWithGoogle(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/dev-login")
-    public ResponseEntity<AuthResponse> devLogin(@Valid @RequestBody DevLoginRequest request) {
-        AuthResponse response = authService.devLogin(request);
         return ResponseEntity.ok(response);
     }
 

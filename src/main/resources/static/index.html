@@ -346,6 +346,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, name, avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${email}` })
                 });
+                if (!res.ok) throw new Error('Dev login is only available with the dev profile');
                 const data = await res.json();
                 currentAuth = data;
                 updateHeaderUI();

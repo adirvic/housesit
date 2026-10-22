@@ -18,14 +18,29 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
-    private String jwtSecret;
+    /** HMAC-SHA256 requires a key of at least 256 bits. */
+    static final int MIN_SECRET_BYTES = 32;
 
-    @Value("${app.jwt.expiration-ms:86400000}")
-    private long jwtExpirationMs;
+    private final SecretKey signingKey;
+    private final long jwtExpirationMs;
 
-    private SecretKey getSigningKey() {
+    public JwtService(@Value("${app.jwt.secret:}") String jwtSecret,
+                      @Value("${app.jwt.expiration-ms:86400000}") long jwtExpirationMs) {
+        this.signingKey = buildSigningKey(jwtSecret);
+        this.jwtExpirationMs = jwtExpirationMs;
+    }
+
+    private static SecretKey buildSigningKey(String jwtSecret) {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT signing secret is not configured. Set the JWT_SECRET environment variable "
+                            + "(e.g. `openssl rand -base64 48`) or run with the 'dev' profile.");
+        }
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "JWT signing secret must be at least " + MIN_SECRET_BYTES + " bytes long.");
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -47,7 +62,7 @@ public class JwtService {
                 .subject(user.getEmail())
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey())
+                .signWith(signingKey)
                 .compact();
     }
 
@@ -71,7 +86,7 @@ public class JwtService {
 
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
